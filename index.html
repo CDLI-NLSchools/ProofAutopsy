@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en-CA">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proof Autopsy: Math 2201 Unit 7</title>
+<style>
+  :root{
+    --ink:#1c2430; --muted:#5a6572; --accent:#0b5cad; --accent-dark:#084a8a;
+    --ok:#177245; --bad:#b3261e; --card:#ffffff; --bg:#eef2f6; --line:#d4dce4;
+    --soft:#f4f8fc; --warn:#8a5a00;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.45;}
+  .wrap{max-width:779px;margin:0 auto;padding:16px 14px 48px;}
+  header{margin:10px 0 14px;}
+  h1{font-size:1.7rem;margin:0 0 2px;}
+  h2{font-size:1.3rem;margin:0 0 6px;}
+  h3{font-size:1.08rem;margin:14px 0 6px;}
+  .subtitle{color:var(--muted);font-size:1rem;margin:0 0 8px;}
+  .instruction{font-size:1.02rem;margin:0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin:14px 0;box-shadow:0 1px 3px rgba(20,40,60,.06);}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .controls .spacer{flex:1;}
+  button{font:inherit;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:#fff;
+    padding:9px 16px;border-radius:8px;min-height:44px;font-weight:600;}
+  button:hover{background:var(--accent-dark);}
+  button.secondary{background:#fff;color:var(--accent);}
+  button.secondary:hover{background:var(--soft);}
+  button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent);}
+  button.secondary[aria-pressed="true"]{background:var(--accent);color:#fff;}
+  button:disabled{opacity:.55;cursor:default;}
+  button:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:3px solid #f2b01e;outline-offset:2px;}
+  .modebtns{display:flex;flex-wrap:wrap;gap:8px;}
+  .field{display:flex;flex-direction:column;gap:3px;margin:10px 0 0;}
+  .field label{font-size:.88rem;color:var(--muted);font-weight:600;}
+  textarea{padding:9px 10px;font:inherit;border:1px solid var(--line);border-radius:8px;width:100%;min-height:84px;background:#fff;}
+  .pickrow{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 0;}
+  .pickopt{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:center;background:#fff;font-weight:600;}
+  .pickopt input{width:20px;height:20px;}
+  .checkrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 0;}
+  .feedback{margin:12px 0 0;border-radius:10px;padding:12px 14px;display:none;}
+  .feedback.show{display:block;}
+  .feedback.ok{background:#f2faf5;border:1px solid var(--ok);}
+  .feedback.bad{background:#fdf3f2;border:1px solid var(--bad);}
+  .feedback.info{background:var(--soft);border:1px solid var(--line);}
+  .feedback p{margin:4px 0;}
+  .feedback ul{margin:6px 0;padding-left:20px;}
+  .feedback .sumline{font-weight:700;}
+  .feedback.ok .sumline{color:var(--ok);}
+  .feedback.bad .sumline{color:var(--bad);}
+  table.plan{border-collapse:collapse;width:100%;font-size:.95rem;margin:10px 0;}
+  table.plan th,table.plan td{border:1px solid var(--line);padding:5px 8px;text-align:left;}
+  table.plan th{background:var(--soft);}
+  .hidden{display:none !important;}
+  .bigprompt{font-size:1.1rem;font-weight:600;}
+  .workline{font-size:1.05rem;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+  .note{color:var(--muted);font-size:.94rem;}
+  .stepbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;background:#fff;}
+  .stepbox.current{background:var(--soft);border-color:var(--accent);}
+  .stepbox .stepnum{font-weight:700;color:var(--accent-dark);}
+  #reportSheet{background:#fff;}
+  #reportSheet table{border-collapse:collapse;width:100%;font-size:.95rem;margin:10px 0;}
+  #reportSheet th,#reportSheet td{border:1px solid var(--line);padding:5px 8px;text-align:left;}
+  #reportSheet th{background:var(--soft);}
+  @media (max-width:680px){ h1{font-size:1.4rem;} }
+  @media print{
+    body{background:#fff;}
+    .wrap{max-width:none;padding:0;}
+    body *{visibility:hidden;}
+    #reportSheet,#reportSheet *{visibility:visible;}
+    #reportSheet{position:absolute;left:0;top:0;width:100%;border:none;box-shadow:none;margin:0;padding:0;}
+    #reportSheet textarea{border:1px solid #999;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Proof Autopsy</h1>
+    <p class="subtitle">Math 2201, Unit 7: Inductive and Deductive Reasoning (Indicators 2.8, 2.7)</p>
+    <p class="instruction">This is practice: take proofs apart step by step, find where they break, and name the error. Nothing is recorded and nothing leaves this page.</p>
+  </header>
+
+  <div class="card controls no-print" role="group" aria-label="Choose a mode">
+    <div class="modebtns">
+      <button type="button" id="modeAutopsy" aria-pressed="true">1. Autopsy Mode</button>
+      <button type="button" id="modeSort" class="secondary" aria-pressed="false">2. Sort Mode</button>
+    </div>
+  </div>
+
+  <main>
+    <!-- Mode 1: Autopsy -->
+    <section class="card" id="panelAutopsy" aria-labelledby="aHeading">
+      <h2 id="aHeading">Autopsy Mode: Find the Fatal Step</h2>
+      <p>Read the claim, then reveal the proof one step at a time. The moment a step cannot be accepted, press Flag this step and name the error. If every step holds up, step through to the end and choose This proof is valid. Some proofs in this set are sound, so a clean proof is a real possibility. The four error names used here are: False premise, Division by zero, Circular reasoning, and Algebraic error.</p>
+      <h3 id="aTitle"></h3>
+      <p class="workline" id="aClaim"></p>
+      <div id="aSteps"></div>
+      <div class="checkrow">
+        <button type="button" id="aNext">Next step</button>
+        <button type="button" id="aFlag" class="secondary">Flag this step</button>
+        <button type="button" id="aValid" class="secondary" disabled>This proof is valid</button>
+        <button type="button" id="aNew" class="secondary">New autopsy</button>
+      </div>
+      <div id="aClassify" class="hidden">
+        <fieldset style="border:none;padding:0;margin:0;">
+          <legend style="font-weight:600;">You flagged the current step. Which error is it?</legend>
+          <div class="pickrow" id="aClassPicks"></div>
+        </fieldset>
+        <div class="checkrow">
+          <button type="button" id="aClassCheck">Check my flag</button>
+        </div>
+      </div>
+      <div class="feedback" id="aFeedback" aria-live="polite"></div>
+    </section>
+
+    <!-- Mode 2: Sort -->
+    <section class="card hidden" id="panelSort" aria-labelledby="sHeading">
+      <h2 id="sHeading">Sort Mode: Inductive or Deductive, Settled or Not</h2>
+      <p>Inductive reasoning builds a general claim from observed cases. Deductive reasoning starts from statements taken as true and follows necessary steps. Then judge the strength: does the argument settle its claim for all cases, or could the claim still fail?</p>
+      <p class="workline" id="sText"></p>
+      <fieldset style="border:none;padding:0;margin:0;">
+        <legend style="font-weight:600;">What kind of reasoning is this?</legend>
+        <div class="pickrow" id="sReasonPicks">
+          <label class="pickopt"><input type="radio" name="sReason" value="Inductive"> Inductive</label>
+          <label class="pickopt"><input type="radio" name="sReason" value="Deductive"> Deductive</label>
+        </div>
+      </fieldset>
+      <fieldset style="border:none;padding:0;margin:12px 0 0;">
+        <legend style="font-weight:600;">Does it settle the claim for all cases?</legend>
+        <div class="pickrow" id="sSettlePicks">
+          <label class="pickopt"><input type="radio" name="sSettle" value="true"> This settles the claim</label>
+          <label class="pickopt"><input type="radio" name="sSettle" value="false"> This does not settle the claim</label>
+        </div>
+      </fieldset>
+      <div class="checkrow">
+        <button type="button" id="sCheck">Check my sort</button>
+        <button type="button" id="sNew" class="secondary">New argument</button>
+      </div>
+      <p class="note" id="sTally"></p>
+      <div class="feedback" id="sFeedback" aria-live="polite"></div>
+    </section>
+
+    <!-- Autopsy report -->
+    <section class="card" id="reportSheet" aria-labelledby="dsHeading">
+      <h2 id="dsHeading">Autopsy Report</h2>
+      <p class="note no-print">This sheet fills in from the autopsies and sorts you have checked. Add your own notes, then print it and submit it to the assignment folder if your teacher asks for it.</p>
+      <div id="dsBody">
+        <p>No completed autopsy yet. Finish an autopsy above and your work will appear here.</p>
+      </div>
+      <h3>Sort log</h3>
+      <div id="dsSortBody">
+        <p>No completed sort yet. Check a sort above and a summary line will appear here.</p>
+      </div>
+      <div class="field">
+        <label for="dsNotes">My notes (what kinds of breaks I am getting better at spotting, in my own words)</label>
+        <textarea id="dsNotes" placeholder="Example: I missed a division by zero because both sides were 0, so the step looked harmless. I will check every division for a divisor that could be 0."></textarea>
+      </div>
+      <div class="checkrow no-print">
+        <button type="button" id="printBtn">Print autopsy report</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+"use strict";
+// ==GENERATOR==
+// Pure data and serving logic for Proof Autopsy. No DOM access here.
+// Every serving function takes an rng (a function returning a number in
+// [0, 1)) so the harness can drive it with a seeded generator. When rng is
+// omitted, Math.random is used.
+
+function makeRng(seed) {
+  var a = (seed >>> 0) || 1;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function rngOr(rng) { return (typeof rng === "function") ? rng : Math.random; }
+function rPick(rng, arr) { return arr[Math.floor(rngOr(rng)() * arr.length)]; }
+function rInt(rng, min, max) { return min + Math.floor(rngOr(rng)() * (max - min + 1)); }
+function rShuffle(rng, arr) {
+  var r = rngOr(rng);
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(r() * (i + 1));
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+
+// Fixed error taxonomy for Autopsy Mode.
+var TAXONOMY = ["False premise", "Division by zero", "Circular reasoning", "Algebraic error"];
+
+// Autopsy bank. Each entry: id, title, claimText, steps in order,
+// fatalIndex (first step that cannot be accepted, or -1 for a valid proof),
+// errorType (one of TAXONOMY, or null when valid), correction.
+// eqSteps, when present, is parallel to steps: null, or an object with
+// lhs and rhs functions of a test assignment v = {a, b}, plus an optional
+// divisor function for division steps. testAssignment gives the v used.
+var AUTOPSY_BANK = [
+  {
+    id: "div-classic",
+    title: "Two Equals One",
+    claimText: "Claim: Starting from a = b, we can prove 2 = 1.",
+    steps: [
+      "Let a and b be numbers with a = b. Use a = 3 and b = 3 as a test case.",
+      "Multiply both sides by a: a squared = a times b.",
+      "Subtract b squared from both sides: a squared minus b squared = a b minus b squared.",
+      "Factor both sides: (a - b)(a + b) = b(a - b).",
+      "Divide both sides by (a - b): a + b = b.",
+      "Since a = b, replace a with b: b + b = b, so 2b = b.",
+      "Divide both sides by b: 2 = 1."
+    ],
+    fatalIndex: 4,
+    errorType: "Division by zero",
+    correction: "The division step divides both sides by (a - b). Since a = b, that factor is 0, and division by 0 is not allowed. Every step before it holds, because both sides are equal (both are 0 at the factoring step). Cancelling the zero factor is what creates the false result a + b = b, which reads 6 = 3 in the test case, and everything after it rests on that break.",
+    testAssignment: { a: 3, b: 3 },
+    eqSteps: [
+      { lhs: function (v) { return v.a; }, rhs: function (v) { return v.b; } },
+      { lhs: function (v) { return v.a * v.a; }, rhs: function (v) { return v.a * v.b; } },
+      { lhs: function (v) { return v.a * v.a - v.b * v.b; }, rhs: function (v) { return v.a * v.b - v.b * v.b; } },
+      { lhs: function (v) { return (v.a - v.b) * (v.a + v.b); }, rhs: function (v) { return v.b * (v.a - v.b); } },
+      { lhs: function (v) { return v.a + v.b; }, rhs: function (v) { return v.b; }, divisor: function (v) { return v.a - v.b; } },
+      { lhs: function (v) { return 2 * v.b; }, rhs: function (v) { return v.b; } },
+      { lhs: function (v) { return 2; }, rhs: function (v) { return 1; } }
+    ]
+  },
+  {
+    id: "div-cancel",
+    title: "The Factor That Vanishes",
+    claimText: "Claim: 2 = 3.",
+    steps: [
+      "Let x = 2.",
+      "Compute two products: x(x - 2) = 0 and 3(x - 2) = 0, so x(x - 2) = 3(x - 2).",
+      "Divide both sides by (x - 2). This gives x = 3.",
+      "But x was set equal to 2 in the first step, so 2 = 3."
+    ],
+    fatalIndex: 2,
+    errorType: "Division by zero",
+    correction: "The division step divides by (x - 2). Since x = 2, that factor is 0, and division by 0 is not allowed. The equation in the step before really is true, but only because both sides are 0. A shared factor of 0 cannot be cancelled, so x = 3 does not follow and there is no fix that keeps the claim.",
+    testAssignment: { a: 2, b: 0 },
+    eqSteps: [
+      { lhs: function (v) { return v.a; }, rhs: function (v) { return 2; } },
+      { lhs: function (v) { return v.a * (v.a - 2); }, rhs: function (v) { return 3 * (v.a - 2); } },
+      { lhs: function (v) { return v.a; }, rhs: function (v) { return 3; }, divisor: function (v) { return v.a - 2; } },
+      { lhs: function (v) { return 2; }, rhs: function (v) { return 3; } }
+    ]
+  },
+  {
+    id: "alg-square",
+    title: "The Missing Middle Term",
+    claimText: "Claim: For every number x, (x + 3) squared = x squared + 9.",
+    steps: [
+      "Let x be any number. The claim is about (x + 3) squared.",
+      "(x + 3) squared means (x + 3) times (x + 3).",
+      "Multiplying out gives x squared + 9, so (x + 3) squared = x squared + 9.",
+      "Subtract 9 from both sides: (x + 3) squared minus 9 = x squared.",
+      "So the rule (x + 3) squared = x squared + 9 holds for every number x."
+    ],
+    fatalIndex: 2,
+    errorType: "Algebraic error",
+    correction: "The multiplying-out step drops the middle term. Done carefully, (x + 3)(x + 3) = x squared + 3x + 3x + 9 = x squared + 6x + 9. The step that writes x squared + 9 leaves out 6x, so everything after it rests on a wrong expansion. Test it with x = 2: the left side is 25, while x squared + 9 is only 13. The fix is the full expansion with the 6x term kept.",
+    testAssignment: { a: 2, b: 0 },
+    eqSteps: [
+      null,
+      { lhs: function (v) { return (v.a + 3) * (v.a + 3); }, rhs: function (v) { return Math.pow(v.a + 3, 2); } },
+      { lhs: function (v) { return Math.pow(v.a + 3, 2); }, rhs: function (v) { return v.a * v.a + 9; } },
+      { lhs: function (v) { return Math.pow(v.a + 3, 2) - 9; }, rhs: function (v) { return v.a * v.a; } },
+      { lhs: function (v) { return Math.pow(v.a + 3, 2); }, rhs: function (v) { return v.a * v.a + 9; } }
+    ]
+  },
+  {
+    id: "alg-parity",
+    title: "Odd Plus Odd Stays Odd?",
+    claimText: "Claim: The sum of two odd numbers is odd.",
+    steps: [
+      "Let m and n be whole numbers. Write the two odd numbers as 2m + 1 and 2n + 1.",
+      "Add them: (2m + 1) + (2n + 1) = 2m + 2n + 2.",
+      "Factor: 2m + 2n + 2 = 2(m + n + 1) + 1.",
+      "Any number written in the form 2k + 1 is odd, so the sum is odd.",
+      "Therefore the sum of any two odd numbers is odd."
+    ],
+    fatalIndex: 2,
+    errorType: "Algebraic error",
+    correction: "The factoring step adds an extra 1. Expanding 2(m + n + 1) already gives 2m + 2n + 2, so writing + 1 after it makes the right side 1 too big. Correctly factored, the sum is 2(m + n + 1), which is a multiple of 2 and so is even. The fix changes the conclusion: the sum of two odd numbers is even. A quick check agrees: 3 + 5 = 8.",
+    testAssignment: { a: 1, b: 2 },
+    eqSteps: [
+      null,
+      { lhs: function (v) { return (2 * v.a + 1) + (2 * v.b + 1); }, rhs: function (v) { return 2 * v.a + 2 * v.b + 2; } },
+      { lhs: function (v) { return 2 * v.a + 2 * v.b + 2; }, rhs: function (v) { return 2 * (v.a + v.b + 1) + 1; } },
+      null,
+      null
+    ]
+  },
+  {
+    id: "circ-triangle",
+    title: "Going in Circles with Triangles",
+    claimText: "Claim: The interior angles of any triangle add to 180 degrees.",
+    steps: [
+      "Let ABC be any triangle. We will prove that its angles add to 180 degrees.",
+      "Draw the line through A parallel to side BC.",
+      "Because the angles of any triangle add to 180 degrees, the angles gathered at A, together with angle A itself, must also add to 180 degrees.",
+      "The alternate interior angles formed by the parallel line show that the two outer angles at A equal angles B and C.",
+      "Therefore angles A, B and C add to 180 degrees."
+    ],
+    fatalIndex: 2,
+    errorType: "Circular reasoning",
+    correction: "The third step uses the claim itself as a reason: it says the angles add to 180 degrees because triangle angles add to 180 degrees, which is exactly what the proof is supposed to establish. A sound version never assumes the sum. It uses the straight line at A instead: a straight angle is 180 degrees by definition, and the parallel line with alternate interior angles moves angles B and C up to A, so the sum is read off the straight line.",
+    testAssignment: null,
+    eqSteps: null
+  },
+  {
+    id: "circ-pythagoras",
+    title: "Pythagoras Proves Itself",
+    claimText: "Claim: In a right triangle with legs a and b and hypotenuse c, a squared + b squared = c squared.",
+    steps: [
+      "Take a right triangle with legs a and b and hypotenuse c.",
+      "Place the triangle on a grid so the hypotenuse runs from the point (0, 0) to the point (a, b). Its length is c.",
+      "By the distance formula, c = the square root of (a squared + b squared).",
+      "Square both sides: c squared = a squared + b squared.",
+      "Therefore a squared + b squared = c squared."
+    ],
+    fatalIndex: 2,
+    errorType: "Circular reasoning",
+    correction: "The distance formula is built from the Pythagorean theorem, so using it in this proof assumes the result before proving it. The algebra after that step is fine, but it only rearranges the assumed formula. A sound proof needs a route that never uses the theorem itself, for example a similar triangles argument or an area rearrangement argument.",
+    testAssignment: null,
+    eqSteps: null
+  },
+  {
+    id: "false-multiples",
+    title: "Multiples Mix-Up",
+    claimText: "Claim: 12 is a multiple of 8.",
+    steps: [
+      "All multiples of 4 are multiples of 8.",
+      "12 is a multiple of 4, since 12 = 4 times 3.",
+      "So 12 fits the opening statement: it is a multiple of 4.",
+      "Therefore 12 is a multiple of 8."
+    ],
+    fatalIndex: 0,
+    errorType: "False premise",
+    correction: "The opening statement is false: 4 itself, and also 12 and 20, are multiples of 4 that are not multiples of 8. The later steps follow the opening statement correctly, but an argument built on a false starting statement does not prove its conclusion. There is no fix that keeps the claim, because 12 really is not a multiple of 8.",
+    testAssignment: null,
+    eqSteps: null
+  },
+  {
+    id: "false-divisible",
+    title: "Divisible by Three, So by Nine?",
+    claimText: "Claim: 12 is divisible by 9.",
+    steps: [
+      "Consider the number 12.",
+      "Every number divisible by 3 is also divisible by 9.",
+      "12 is divisible by 3, because 12 = 3 times 4.",
+      "Therefore 12 is divisible by 9."
+    ],
+    fatalIndex: 1,
+    errorType: "False premise",
+    correction: "The statement that every number divisible by 3 is divisible by 9 is false: 6, 12 and 15 are all divisible by 3 but not by 9. The steps after it follow from it correctly, so the break is at that starting statement, not in the later steps. Since 12 is not divisible by 9, no fix can save the conclusion.",
+    testAssignment: null,
+    eqSteps: null
+  },
+  {
+    id: "valid-parity",
+    title: "A Sound Parity Proof",
+    claimText: "Claim: The sum of two odd numbers is even.",
+    steps: [
+      "Let the two odd numbers be 2m + 1 and 2n + 1, where m and n are whole numbers.",
+      "Their sum is (2m + 1) + (2n + 1) = 2m + 2n + 2.",
+      "Factor out 2: 2m + 2n + 2 = 2(m + n + 1).",
+      "A whole-number multiple of 2 is even, so the sum is even."
+    ],
+    fatalIndex: -1,
+    errorType: null,
+    correction: "No correction is needed: this proof is sound. Odd numbers have the form 2k + 1, the sum simplifies correctly to 2(m + n + 1), and a whole-number multiple of 2 is even by definition. Every step follows from the steps before it.",
+    testAssignment: { a: 2, b: 3 },
+    eqSteps: [
+      null,
+      { lhs: function (v) { return (2 * v.a + 1) + (2 * v.b + 1); }, rhs: function (v) { return 2 * v.a + 2 * v.b + 2; } },
+      { lhs: function (v) { return 2 * v.a + 2 * v.b + 2; }, rhs: function (v) { return 2 * (v.a + v.b + 1); } },
+      null
+    ]
+  },
+  {
+    id: "valid-square-multiple",
+    title: "A Sound Divisibility Proof",
+    claimText: "Claim: If a whole number n is a multiple of 3, then n squared is a multiple of 9.",
+    steps: [
+      "Suppose n is a multiple of 3. Then n = 3k for some whole number k.",
+      "Square both sides: n squared = (3k) squared = 9k squared.",
+      "9k squared is 9 times k squared, so n squared is a multiple of 9.",
+      "Therefore, whenever n is a multiple of 3, n squared is a multiple of 9."
+    ],
+    fatalIndex: -1,
+    errorType: null,
+    correction: "No correction is needed: this proof is sound. Writing n = 3k uses only the meaning of multiple of 3, squaring gives 9k squared with no terms dropped, and 9 times a whole number is a multiple of 9 by definition.",
+    testAssignment: { a: 2, b: 0 },
+    eqSteps: [
+      null,
+      { lhs: function (v) { return Math.pow(3 * v.a, 2); }, rhs: function (v) { return 9 * v.a * v.a; } },
+      { lhs: function (v) { return 9 * v.a * v.a; }, rhs: function (v) { return 9 * (v.a * v.a); } },
+      null
+    ]
+  }
+];
+
+// Sort bank. Each entry: text, reasoning ("Inductive" or "Deductive"),
+// settles (true if the argument settles its claim for all cases), why.
+var SORT_BANK = [
+  {
+    id: "sort-storms",
+    text: "Each of the last five Februarys, this town had at least one big storm. So next February will have a big storm too.",
+    reasoning: "Inductive",
+    settles: false,
+    why: "The claim is built from observed cases only. Past Februarys suggest a pattern, but no number of past storms forces the next one, so the claim is not settled."
+  },
+  {
+    id: "sort-bolts",
+    text: "Twenty bolts picked at random from a crate were each tested and each held 50 kg. So every bolt in the crate holds 50 kg.",
+    reasoning: "Inductive",
+    settles: false,
+    why: "Testing a sample is reasoning from cases. The untested bolts could include a weak one, so the claim about every bolt is not settled."
+  },
+  {
+    id: "sort-even-sum-checks",
+    text: "For n = 1, 2, 3 and 4, the value of n squared + n came out even every time. So n squared + n is even for every whole number n.",
+    reasoning: "Inductive",
+    settles: false,
+    why: "Checking four cases, or any number of cases, does not cover every whole number. The claim happens to be true, but these checks alone do not settle it; a general argument is needed."
+  },
+  {
+    id: "sort-swans",
+    text: "Every swan the class has seen at the pond this year was white. So all swans are white.",
+    reasoning: "Inductive",
+    settles: false,
+    why: "This generalises from the swans that happened to be observed. Swans elsewhere were not checked, so the claim about all swans is not settled."
+  },
+  {
+    id: "sort-flyers",
+    text: "Sales went up in the week after each of the last three flyers the shop sent out. So sending a flyer always makes sales go up.",
+    reasoning: "Inductive",
+    settles: false,
+    why: "Three observed cases suggest a pattern, but other causes could explain those weeks and a future flyer could fall flat. The claim is not settled."
+  },
+  {
+    id: "sort-multiple-ten",
+    text: "All multiples of 10 end in the digit 0. 340 is a multiple of 10. So 340 ends in the digit 0.",
+    reasoning: "Deductive",
+    settles: true,
+    why: "It applies a true general statement to a case that fits it. If the general statement holds and 340 really is a multiple of 10, the conclusion must hold."
+  },
+  {
+    id: "sort-ends-in-five",
+    text: "If a whole number ends in 5, then it is divisible by 5. 785 ends in 5. So 785 is divisible by 5.",
+    reasoning: "Deductive",
+    settles: true,
+    why: "The if-then statement is true and the case matches its condition, so the conclusion follows necessarily."
+  },
+  {
+    id: "sort-square-angles",
+    text: "Every square has four right angles. This shape is a square. So this shape has four right angles.",
+    reasoning: "Deductive",
+    settles: true,
+    why: "A true general statement is applied to a shape that fits it exactly, so the conclusion is guaranteed."
+  },
+  {
+    id: "sort-odd-sum-proof",
+    text: "Any odd number can be written as 2k + 1. Adding two of them gives 2(m + n + 1), a multiple of 2. So the sum of any two odd numbers is even.",
+    reasoning: "Deductive",
+    settles: true,
+    why: "It works with the general form of every odd number, not with picked examples, and each step follows necessarily. That settles the claim for all pairs of odd numbers."
+  },
+  {
+    id: "sort-multiple-six",
+    text: "If a number is a multiple of 6, then it is even. 14 is even. So 14 is a multiple of 6.",
+    reasoning: "Deductive",
+    settles: false,
+    why: "This runs the if-then statement backwards: it treats the result (being even) as if it guaranteed the condition (being a multiple of 6). Even numbers like 14 that are not multiples of 6 show the step fails, so the claim is not settled. In fact 14 is not a multiple of 6."
+  },
+  {
+    id: "sort-cats",
+    text: "All cats are mammals. Felix is a mammal. So Felix is a cat.",
+    reasoning: "Deductive",
+    settles: false,
+    why: "Being a mammal is the result side of the opening statement, and many mammals are not cats. The argument assumes the statement works in reverse, so it does not settle what Felix is."
+  },
+  {
+    id: "sort-wet-field",
+    text: "If it rained last night, the field is wet this morning. The field is wet this morning. So it rained last night.",
+    reasoning: "Deductive",
+    settles: false,
+    why: "A wet field can have other causes, such as sprinklers or dew. The argument uses the result as proof of one particular cause, which does not follow, so the claim is not settled."
+  }
+];
+
+// Serving functions used by the UI and exercised by the harness.
+function pickAutopsy(rng) { return rPick(rng, AUTOPSY_BANK); }
+function pickSort(rng) { return rPick(rng, SORT_BANK); }
+function autopsyDeck(rng) { return rShuffle(rng, AUTOPSY_BANK.slice()); }
+function sortDeck(rng) { return rShuffle(rng, SORT_BANK.slice()); }
+// ==END GENERATOR==
+
+// ---- UI ----
+
+function $(id) { return document.getElementById(id); }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+var state = {
+  mode: "autopsy",
+  autopsy: null,
+  revealed: 0,
+  pendingFlag: -1,
+  aDone: false,
+  aDeck: [],
+  sort: null,
+  sDone: false,
+  sDeck: [],
+  sortChecked: 0,
+  sortBothRight: 0,
+  report: [],
+  sortLog: []
+};
+
+function setMode(mode) {
+  state.mode = mode;
+  $("panelAutopsy").classList.toggle("hidden", mode !== "autopsy");
+  $("panelSort").classList.toggle("hidden", mode !== "sort");
+  [["modeAutopsy", "autopsy"], ["modeSort", "sort"]].forEach(function (pair) {
+    var on = pair[1] === mode;
+    $(pair[0]).setAttribute("aria-pressed", String(on));
+    $(pair[0]).classList.toggle("secondary", !on);
+  });
+}
+$("modeAutopsy").addEventListener("click", function () { setMode("autopsy"); });
+$("modeSort").addEventListener("click", function () { setMode("sort"); });
+
+function showFeedback(el, html, cls) {
+  el.innerHTML = html;
+  el.className = "feedback show " + cls;
+}
+function hideFeedback(el) { el.innerHTML = ""; el.className = "feedback"; }
+function checkedPick(name) {
+  var els = document.querySelectorAll("input[name='" + name + "']");
+  for (var i = 0; i < els.length; i++) if (els[i].checked) return els[i].value;
+  return null;
+}
+
+// ---- Autopsy UI ----
+
+function nextAutopsyEntry() {
+  if (state.aDeck.length === 0) state.aDeck = autopsyDeck(Math.random);
+  return state.aDeck.pop();
+}
+
+function newAutopsy() {
+  state.autopsy = nextAutopsyEntry();
+  state.revealed = 1;
+  state.pendingFlag = -1;
+  state.aDone = false;
+  $("aTitle").textContent = state.autopsy.title;
+  $("aClaim").textContent = state.autopsy.claimText;
+  $("aClassify").classList.add("hidden");
+  var picks = $("aClassPicks");
+  picks.innerHTML = "";
+  TAXONOMY.forEach(function (t) {
+    var lab = document.createElement("label");
+    lab.className = "pickopt";
+    lab.innerHTML = "<input type=\"radio\" name=\"aClass\" value=\"" + esc(t) + "\"> " + esc(t);
+    picks.appendChild(lab);
+  });
+  hideFeedback($("aFeedback"));
+  renderAutopsySteps();
+}
+
+function renderAutopsySteps() {
+  var entry = state.autopsy;
+  var wrap = $("aSteps");
+  wrap.innerHTML = "";
+  for (var i = 0; i < state.revealed; i++) {
+    var div = document.createElement("div");
+    div.className = "stepbox" + (i === state.revealed - 1 && !state.aDone ? " current" : "");
+    div.innerHTML = "<span class=\"stepnum\">Step " + (i + 1) + ":</span> " + esc(entry.steps[i]);
+    wrap.appendChild(div);
+  }
+  var allShown = state.revealed >= entry.steps.length;
+  $("aNext").disabled = allShown || state.aDone || state.pendingFlag >= 0;
+  $("aFlag").disabled = state.aDone || state.pendingFlag >= 0;
+  $("aValid").disabled = !allShown || state.aDone || state.pendingFlag >= 0;
+}
+
+$("aNext").addEventListener("click", function () {
+  if (state.revealed < state.autopsy.steps.length) state.revealed++;
+  renderAutopsySteps();
+});
+
+$("aFlag").addEventListener("click", function () {
+  state.pendingFlag = state.revealed - 1;
+  $("aClassify").classList.remove("hidden");
+  renderAutopsySteps();
+});
+
+function finishAutopsy(flaggedIndex, studentClass) {
+  var entry = state.autopsy;
+  state.aDone = true;
+  state.pendingFlag = -1;
+  $("aClassify").classList.add("hidden");
+  var lines = [];
+  var stepOk = false, classOk = false, classJudged = flaggedIndex !== null;
+  if (entry.fatalIndex === -1) {
+    if (flaggedIndex === null) {
+      stepOk = true;
+      lines.push("Step check: correct. No step breaks. Every step follows from the ones before it, so the proof is sound.");
+    } else {
+      lines.push("Step check: Step " + (flaggedIndex + 1) + " is acceptable. In fact no step in this proof breaks: every step follows from the steps before it, so the proof is sound and there was no fatal step to flag.");
+    }
+  } else {
+    var fatalLabel = "Step " + (entry.fatalIndex + 1);
+    if (flaggedIndex === null) {
+      lines.push("Step check: this proof is not valid. It first breaks at " + fatalLabel + ". Stepping through to the end is not enough on its own: compare each step with what came before it.");
+    } else if (flaggedIndex === entry.fatalIndex) {
+      stepOk = true;
+      lines.push("Step check: correct. " + fatalLabel + " is the first step that cannot be accepted. Every step before it holds up.");
+    } else if (flaggedIndex < entry.fatalIndex) {
+      lines.push("Step check: Step " + (flaggedIndex + 1) + " is still acceptable: it follows correctly from the steps before it. The first break comes later, at " + fatalLabel + ". Keep checking each new step against what has actually been established, not against what the claim wants.");
+    } else {
+      lines.push("Step check: by Step " + (flaggedIndex + 1) + " the proof had already broken. The first step that cannot be accepted is " + fatalLabel + ". Once a proof breaks, later steps are built on the break, so the fatal step is the earliest one that fails.");
+    }
+  }
+  if (classJudged) {
+    if (entry.fatalIndex === -1) {
+      lines.push("Error name: no error name applies here, because this proof has no error. The four names are for proofs that break.");
+    } else if (studentClass === entry.errorType) {
+      classOk = true;
+      lines.push("Error name: correct. This break is a case of " + esc(entry.errorType.toLowerCase()) + ".");
+    } else if (studentClass === null) {
+      lines.push("Error name: pick one of the four error names before checking. The name for this break is " + esc(entry.errorType) + ".");
+    } else {
+      lines.push("Error name: the name for this break is " + esc(entry.errorType) + ", not " + esc(studentClass) + ". Read the correction below and compare the two error types.");
+    }
+  }
+  var ok;
+  if (entry.fatalIndex === -1) ok = (flaggedIndex === null);
+  else if (flaggedIndex === null) ok = false;
+  else ok = stepOk && classOk;
+  var head = ok ? "Clean autopsy: you found the right verdict on this proof."
+    : "Autopsy complete: compare your flag with the findings below.";
+  var html = "<p class=\"sumline\">" + head + "</p><ul><li>" + lines.join("</li><li>") + "</li></ul>" +
+    "<p><strong>Correction:</strong> " + esc(entry.correction) + "</p>";
+  showFeedback($("aFeedback"), html, ok ? "ok" : "bad");
+  state.report.push({
+    title: entry.title,
+    flaggedLabel: flaggedIndex === null ? "Said the proof is valid" : "Step " + (flaggedIndex + 1),
+    studentClass: flaggedIndex === null ? "none" : (studentClass === null ? "not chosen" : studentClass),
+    actualLabel: entry.fatalIndex === -1 ? "No break: proof is valid" : "Step " + (entry.fatalIndex + 1),
+    actualClass: entry.fatalIndex === -1 ? "none: proof is valid" : entry.errorType,
+    correction: entry.correction
+  });
+  renderReport();
+  renderAutopsySteps();
+}
+
+$("aClassCheck").addEventListener("click", function () {
+  var chosen = checkedPick("aClass");
+  finishAutopsy(state.pendingFlag, chosen);
+});
+
+$("aValid").addEventListener("click", function () { finishAutopsy(null, null); });
+$("aNew").addEventListener("click", newAutopsy);
+
+// ---- Sort UI ----
+
+function nextSortEntry() {
+  if (state.sDeck.length === 0) state.sDeck = sortDeck(Math.random);
+  return state.sDeck.pop();
+}
+
+function newSort() {
+  state.sort = nextSortEntry();
+  state.sDone = false;
+  $("sText").textContent = state.sort.text;
+  var r = document.querySelectorAll("input[name='sReason']");
+  for (var i = 0; i < r.length; i++) r[i].checked = false;
+  var s = document.querySelectorAll("input[name='sSettle']");
+  for (var j = 0; j < s.length; j++) s[j].checked = false;
+  hideFeedback($("sFeedback"));
+  renderTally();
+}
+
+function renderTally() {
+  if (state.sortChecked === 0) {
+    $("sTally").textContent = "No arguments checked yet in Sort Mode.";
+  } else {
+    $("sTally").textContent = "So far in Sort Mode: you have checked " + state.sortChecked +
+      (state.sortChecked === 1 ? " argument" : " arguments") + " and matched both answers on " +
+      state.sortBothRight + " of " + state.sortChecked + ".";
+  }
+}
+
+$("sCheck").addEventListener("click", function () {
+  if (state.sDone) return;
+  var entry = state.sort, fb = $("sFeedback");
+  var reasonPick = checkedPick("sReason");
+  var settleRaw = checkedPick("sSettle");
+  if (reasonPick === null || settleRaw === null) {
+    showFeedback(fb, "<p class=\"sumline\">Make both choices first: pick a reasoning type and a settles choice, then check.</p>", "info");
+    return;
+  }
+  var settlePick = settleRaw === "true";
+  var reasonOk = reasonPick === entry.reasoning;
+  var settleOk = settlePick === entry.settles;
+  var lines = [];
+  lines.push("Reasoning: this argument is " + esc(entry.reasoning.toLowerCase()) + "." +
+    (reasonOk ? " Your pick matches." : " Your pick was " + esc(reasonPick.toLowerCase()) + ". Look at whether the argument starts from cases it observed or from general statements it takes as true."));
+  lines.push("Settles: this argument " + (entry.settles ? "does settle its claim for all cases." : "does not settle its claim for all cases.") +
+    (settleOk ? " Your pick matches." : " Your pick was the other choice."));
+  lines.push("Why: " + esc(entry.why));
+  var both = reasonOk && settleOk;
+  var head = both ? "Both answers match." : "One or both answers differ: read the findings and try the next argument.";
+  showFeedback(fb, "<p class=\"sumline\">" + head + "</p><ul><li>" + lines.join("</li><li>") + "</li></ul>", both ? "ok" : "bad");
+  state.sDone = true;
+  state.sortChecked++;
+  if (both) state.sortBothRight++;
+  state.sortLog.push({
+    text: entry.text,
+    reasoning: entry.reasoning,
+    settles: entry.settles,
+    both: both
+  });
+  renderTally();
+  renderReport();
+});
+$("sNew").addEventListener("click", newSort);
+
+// ---- Autopsy report ----
+
+function renderReport() {
+  var body = $("dsBody");
+  if (state.report.length === 0) {
+    body.innerHTML = "<p>No completed autopsy yet. Finish an autopsy above and your work will appear here.</p>";
+  } else {
+    var html = "<table><tr><th>Proof</th><th>Step you flagged</th><th>First step that breaks</th><th>Error name you chose</th><th>Error name</th><th>Correction, or why none is needed</th></tr>";
+    state.report.forEach(function (r) {
+      html += "<tr><td>" + esc(r.title) + "</td><td>" + esc(r.flaggedLabel) + "</td><td>" + esc(r.actualLabel) +
+        "</td><td>" + esc(r.studentClass) + "</td><td>" + esc(r.actualClass) + "</td><td>" + esc(r.correction) + "</td></tr>";
+    });
+    html += "</table>";
+    body.innerHTML = html;
+  }
+  var sbody = $("dsSortBody");
+  if (state.sortLog.length === 0) {
+    sbody.innerHTML = "<p>No completed sort yet. Check a sort above and a summary line will appear here.</p>";
+  } else {
+    var items = state.sortLog.map(function (s) {
+      return "<li>" + esc(s.text) + " Reasoning: " + esc(s.reasoning) + ". " +
+        (s.settles ? "Settles the claim." : "Does not settle the claim.") +
+        " Your two answers: " + (s.both ? "both matched." : "did not both match.") + "</li>";
+    });
+    sbody.innerHTML = "<ul><li>" + items.join("</li><li>").replace(/^<li>/, "").replace(/<\/li>$/, "") + "</li></ul>" +
+      "<p>Sort summary so far: " + state.sortBothRight + " of " + state.sortChecked + " checked arguments matched on both answers.</p>";
+  }
+}
+
+$("printBtn").addEventListener("click", function () { window.print(); });
+
+// Start
+newAutopsy();
+newSort();
+</script>
+</body>
+</html>
